@@ -1,0 +1,17 @@
+{
+  "name": "PantryPal",
+  "short_name": "PantryPal",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f6f1e8",
+  "theme_color": "#f6f1e8",
+  "description": "Your free personal recipe box",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
