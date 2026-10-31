@@ -43,7 +43,7 @@ $('importForm').onsubmit=async e=>{
      const lines=pasted.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
      recipe={title:lines[0]||'Imported recipe',ingredients:lines.filter(x=>/^[-•*]|\d+\s/.test(x)).join('\n'),steps:lines.filter(x=>!/^[-•*]|\d+\s/.test(x)).slice(1).join('\n')};
    }
-   if(!recipe.ingredients || !recipe.steps)throw Error('The recipe is missing ingredients or instructions. Nothing was saved.');
+   if(!recipe.title || !recipe.ingredients || !recipe.steps)throw Error('The recipe is missing ingredients or instructions. Nothing was saved.');
    const r={id:crypto.randomUUID(),title:recipe.title||'Imported recipe',description:recipe.description||'',category:'Dinner',time:recipe.time||'',ingredients:recipe.ingredients,steps:recipe.steps,url,image:recipe.image||''};
    state.recipes.unshift(r);await save();render();$('importDialog').close();$('importForm').reset();editRecipe(r);toast('Recipe imported — review and save');
  }catch(err){alert('Import failed: '+err.message)}
@@ -52,5 +52,5 @@ $('importForm').onsubmit=async e=>{
 
 $('install').onclick=async()=>{if(window.installPrompt){window.installPrompt.prompt();window.installPrompt=null}};
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.installPrompt=e;$('install').hidden=false});
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js?v=7',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{}));
 load().then(render);
