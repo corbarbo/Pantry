@@ -31,3 +31,6 @@ Deploy the folder to an HTTPS host, open the URL in Chrome on Android, then use 
 
 ## Privacy
 This build does not send recipe data to a PantryPal server. All recipe data is stored in the browser's IndexedDB on the device.
+
+## Image update
+Recipe cards and detail pages now show food images. Edit a recipe to add an image URL or upload an image under 3 MB. Automatic fetching of photos from website URLs still requires a backend and is not included in this update.
