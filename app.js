@@ -22,7 +22,34 @@ $('fromPlan').onclick=async()=>{Object.values(state.plan).filter(Boolean).forEac
 $('search').oninput=renderRecipes;
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.tab))});
 document.querySelectorAll('.close').forEach(b=>b.onclick=()=>b.closest('dialog').close());
-$('openImport').onclick=()=>$('importDialog').showModal();$('importForm').onsubmit=async e=>{e.preventDefault();let url=$('importUrl').value.trim(),txt=$('importText').value.trim();let title='Imported recipe';try{if(url)title=new URL(url).hostname.replace(/^www\\./,'')+' recipe'}catch{}let lines=txt.split('\\n').map(x=>x.trim()).filter(Boolean);let ingredients=lines.filter(x=>/^([-•*]|\\d+\\s)/.test(x)).join('\\n');let steps=lines.filter(x=>!/^([-•*]|\\d+\\s)/.test(x)).join('\\n');state.recipes.unshift({id:crypto.randomUUID(),title,category:'Other',time:'',description:'Imported draft — review details before cooking.',ingredients,steps,url,image:''});await save();$('importDialog').close();$('importForm').reset();render();toast('Import draft created');let r=state.recipes[0];editRecipe(r)};
+
+const IMPORT_API = 'https://pantrypal-importer.barbeaucory.workers.dev'; // Paste your Cloudflare Worker URL here, e.g. https://pantrypal-import.yourname.workers.dev
+$('openImport').onclick=()=>$('importDialog').showModal();
+$('importForm').onsubmit=async e=>{
+ e.preventDefault();
+ const url=$('importUrl').value.trim(), pasted=$('importText').value.trim();
+ const btn=$('importForm').querySelector('[type=submit]');
+ if(!url && !pasted){toast('Paste a recipe link or recipe text');return}
+ if(url && !IMPORT_API && !pasted){toast('Import service not configured yet');alert('Automatic URL importing needs your Cloudflare Worker URL. Set IMPORT_API in app.js first. No empty recipe was saved.');return}
+ btn.disabled=true;btn.textContent='Importing…';
+ try{
+   let recipe;
+   if(url && IMPORT_API){
+     const response=await fetch(IMPORT_API.replace(/\/$/,'')+'/?url='+encodeURIComponent(url));
+     const payload=await response.json();
+     if(!response.ok)throw Error(payload.error||'Recipe could not be imported');
+     recipe=payload;
+   }else{
+     const lines=pasted.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+     recipe={title:lines[0]||'Imported recipe',ingredients:lines.filter(x=>/^[-•*]|\d+\s/.test(x)).join('\n'),steps:lines.filter(x=>!/^[-•*]|\d+\s/.test(x)).slice(1).join('\n')};
+   }
+   if(!recipe.ingredients || !recipe.steps)throw Error('The recipe is missing ingredients or instructions. Nothing was saved.');
+   const r={id:crypto.randomUUID(),title:recipe.title||'Imported recipe',description:recipe.description||'',category:'Dinner',time:recipe.time||'',ingredients:recipe.ingredients,steps:recipe.steps,url,image:recipe.image||''};
+   state.recipes.unshift(r);await save();render();$('importDialog').close();$('importForm').reset();editRecipe(r);toast('Recipe imported — review and save');
+ }catch(err){alert('Import failed: '+err.message)}
+ finally{btn.disabled=false;btn.textContent='Import recipe'}
+};
+
 $('install').onclick=async()=>{if(window.installPrompt){window.installPrompt.prompt();window.installPrompt=null}};
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.installPrompt=e;$('install').hidden=false});
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
